@@ -1,25 +1,28 @@
 # frozen_string_literal: true
 
+require_relative 'grid'
+
 class PatternDetector
   PRECISION_THRESHOLD = 0.75
 
   def initialize(radar_data)
-    @grid = radar_data
-    @grid_height = radar_data.length
-    @grid_width = radar_data.first.length
+    @radar_data = radar_data
   end
 
   def run(pattern)
+    grid = Grid.new(@radar_data, pattern)
+    grid.offset
+
     detections = []
 
-    (0..(@grid_height - pattern.height)).each do |y|
-      (0..(@grid_width - pattern.width)).each do |x|
-        result = match_pattern_at(x, y, pattern)
+    (0..(grid.height - pattern.height)).each do |y|
+      (0..(grid.width - pattern.width)).each do |x|
+        result = match_pattern_at(x, y, pattern, grid)
         next unless result
 
         image, precision = result
         detections << {
-          location: [x, y],
+          location: [x - grid.width_offset, y - grid.height_offset],
           image:,
           precision: precision.round(3)
         }
@@ -31,12 +34,12 @@ class PatternDetector
 
   private
 
-  def match_pattern_at(start_x, start_y, pattern)
+  def match_pattern_at(start_x, start_y, pattern, grid)
     precision = 1.0
     matched_grid = []
 
     pattern.shape.each_with_index do |pattern_row, row_offset|
-      grid_row = @grid[start_y + row_offset]
+      grid_row = grid.data[start_y + row_offset]
       grid_fragment = grid_row[start_x, pattern.width]
 
       mismatches = count_mismatches(pattern_row, grid_fragment)
