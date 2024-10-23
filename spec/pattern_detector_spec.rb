@@ -179,5 +179,68 @@ describe PatternDetector do
         end
       end
     end
+
+    context 'edge matches' do
+      let(:pattern) { Image.new(%w[o-o -o-]) }
+
+      context 'when there is a single match' do
+        let(:radar_data) { ['-o----', 'o-----'] }
+        let(:pattern_detector) { PatternDetector.new(radar_data) }
+        let(:matches) { [{ image: ['--o', '-o-'], location: [-1, 0], precision: 0.833 }] }
+
+        it 'returns a single result' do
+          expect(subject.size).to eq(1)
+        end
+
+        it 'includes all matches' do
+          matches.each do |match|
+            expect(subject).to include(match)
+          end
+        end
+      end
+
+      context 'when there are multiple matches' do
+        let(:radar_data) { ['-o--o-', 'o----o'] }
+        let(:pattern_detector) { PatternDetector.new(radar_data) }
+        let(:matches) do
+          [
+            { image: ['--o', '-o-'], location: [-1, 0], precision: 0.833 },
+            { image: ['o--', '-o-'], location: [4, 0], precision: 0.833 }
+          ]
+        end
+
+        it 'returns all results' do
+          expect(subject.size).to eq(2)
+        end
+
+        it 'includes all matches' do
+          matches.each do |match|
+            expect(subject).to include(match)
+          end
+        end
+      end
+
+      context 'when there are multiple overlapping matches' do
+        let(:radar_data) { ['--o--', '-o-o-'] }
+        let(:pattern_detector) { PatternDetector.new(radar_data) }
+        let(:matches) do
+          [
+            { image: ['--o', '-o-'], location: [0, 0], precision: 0.833 },
+            { image: ['o--', '-o-'], location: [2, 0], precision: 0.833 },
+            { image: ['o-o', '---'], location: [1, 1], precision: 0.833 }
+          ]
+        end
+
+        it 'returns all results' do
+          expect(subject.size).to eq(3)
+        end
+
+        it 'includes all matches' do
+          matches.each do |match|
+            expect(subject).to include(match)
+          end
+        end
+      end
+    end
   end
 end
